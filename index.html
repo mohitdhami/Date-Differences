@@ -94,6 +94,71 @@
     background: rgba(15,23,42,.7); color: var(--muted);
     font-size: .8rem; outline: none;
   }
+  button.age {
+    background: linear-gradient(90deg, #f472b6, #fb923c);
+    border: 0; color: #1c0a10; font-weight: 800;
+    padding: 13px 20px; border-radius: 12px; font-size: 1rem; cursor: pointer;
+  }
+  button.age:hover { filter: brightness(1.08); }
+  button.age.active { outline: 3px solid rgba(244,114,182,.5); }
+  /* ---- Age pop-up card ---- */
+  .age-overlay {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(2,6,23,.7);
+    backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .age-overlay.open { display: flex; }
+  .age-card {
+    width: 100%; max-width: 460px;
+    background: linear-gradient(180deg, #2b1055 0%, #1e1b4b 45%, #0f172a 100%);
+    border: 1px solid rgba(244,114,182,.45);
+    border-radius: 24px;
+    padding: 28px 26px 24px;
+    text-align: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 60px rgba(244,114,182,.25);
+    position: relative;
+    animation: agePop .35s cubic-bezier(.2,1.4,.4,1);
+  }
+  @keyframes agePop {
+    from { transform: scale(.85) translateY(16px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .age-card .balloons { font-size: 2.4rem; letter-spacing: .2em; margin-bottom: 4px; }
+  .age-card h2 { margin: 0; font-size: 1.6rem; letter-spacing: -.01em; }
+  .age-card h2 span { background: linear-gradient(90deg,#f9a8d4,#fdba74,#fde68a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .age-card .dob { color: var(--muted); font-size: .9rem; margin: 6px 0 14px; }
+  .age-card .dob code { color: #fcd34d; }
+  .age-years {
+    font-size: 4.2rem; font-weight: 900; line-height: 1; margin: 6px 0 0;
+    background: linear-gradient(90deg,#fff,#fbcfe8,#fdba74);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    font-variant-numeric: tabular-nums;
+  }
+  .age-years-label { color: var(--muted); text-transform: uppercase; letter-spacing: .18em; font-size: .75rem; font-weight: 700; margin-top: 2px; }
+  .age-breakdown {
+    margin: 16px 0 6px; font-size: 1.05rem; font-weight: 700; line-height: 1.5;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14);
+    border-radius: 14px; padding: 12px 14px;
+  }
+  .age-breakdown small { display:block; font-weight:500; color: var(--muted); font-size:.8rem; margin-top:4px; }
+  .age-stats { margin-top: 10px; text-align: left; }
+  .age-excl-note {
+    margin-top: 12px; font-size: .8rem; color: #6ee7b7;
+    background: rgba(52,211,153,.1); border: 1px solid rgba(52,211,153,.3);
+    padding: 8px 12px; border-radius: 10px; line-height: 1.5;
+  }
+  .age-next { margin-top: 10px; font-size: .9rem; color: #fde68a; }
+  .age-close {
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+    color: var(--text); width: 34px; height: 34px; border-radius: 999px;
+    cursor: pointer; font-size: 1rem; line-height: 1;
+  }
+  .age-close:hover { background: rgba(255,255,255,.2); }
+  .age-actions { display:flex; gap:10px; margin-top:16px; }
+  .age-actions button { flex:1; }
 </style>
 </head>
 <body>
@@ -127,6 +192,7 @@
 
     <div class="row">
       <button class="primary" id="calcBtn">Calculate difference</button>
+      <button class="age" id="ageBtn" title="Show age pop-up (exclusive: end date excluded)">🎂 Reveal age</button>
       <button class="ghost" id="swapBtn">⇅ Swap dates</button>
       <button class="ghost" id="todayBtn">Today → Now</button>
     </div>
@@ -177,7 +243,37 @@
       • <b>Inclusive</b> = exclusive + 24 hours (counts both the start day and end day, e.g. hotel nights vs. calendar days, age-in-days problems).<br>
       • Calendar breakdown (years / months / days) accounts for leap years and varying month lengths.<br>
       • If End is before Start, dates are auto-swapped.<br>
-      • <b>Shareable link:</b> state lives in the URL, e.g. <code>?start=2020-01-01&amp;end=2026-10-15&amp;startTime=09:30&amp;endTime=17:45</code> — opening that URL restores the dates/times instantly. Omit <code>end</code> (or leave it empty) and the end date defaults to today.
+      • <b>Shareable link:</b> state lives in the URL, e.g. <code>?start=2020-01-01&amp;end=2026-10-15&amp;startTime=09:30&amp;endTime=17:45</code> — opening that URL restores the dates/times instantly. Omit <code>end</code> (or leave it empty) and the end date defaults to today.<br>
+      • <b>Age mode:</b> append <code>&amp;age_calc=true</code> to auto-open the 🎂 age pop-up, e.g. <code>?start=2002-02-27&amp;end=2026-10-15&amp;startTime=00:00&amp;endTime=00:00&amp;age_calc=true</code>. Age always uses the <b>exclusive</b> count (end date excluded) — the standard way to measure age.
+    </div>
+  </div>
+</div>
+
+<!-- Age pop-up overlay -->
+<div class="age-overlay" id="ageOverlay" role="dialog" aria-modal="true" aria-labelledby="ageTitle">
+  <div class="age-card">
+    <button class="age-close" id="ageClose" aria-label="Close">✕</button>
+    <div class="balloons">🎈 🎂 🎈</div>
+    <h2 id="ageTitle">Your <span>Age</span></h2>
+    <p class="dob" id="ageDobLine"></p>
+    <div class="age-years" id="ageYears">–</div>
+    <div class="age-years-label">years old</div>
+    <div class="age-breakdown">
+      <div id="ageBreakdown">–</div>
+      <small>calendar-accurate • leap years handled</small>
+    </div>
+    <div class="age-stats">
+      <div class="stat"><span>Total days lived</span><b id="ageDays"></b></div>
+      <div class="stat"><span>Total hours</span><b id="ageHours"></b></div>
+      <div class="stat"><span>Total minutes</span><b id="ageMins"></b></div>
+      <div class="stat"><span>Total months</span><b id="ageMonths"></b></div>
+      <div class="stat"><span>Weeks + days</span><b id="ageWeeks"></b></div>
+    </div>
+    <div class="age-next" id="ageNext"></div>
+    <div class="age-excl-note">🟢 Exclusive count — end date is <b>excluded</b> (<code>End − Start</code>).<br>This is the standard way to measure current age.</div>
+    <div class="age-actions">
+      <button class="ghost" id="ageCopyBtn">Copy age link 🔗</button>
+      <button class="ghost" id="ageCloseBtn">Close</button>
     </div>
   </div>
 </div>
@@ -296,14 +392,19 @@ const isValidDateStr = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') && !isNaN(new Da
 const isValidTimeStr = s => /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(s || '');
 const normTime = s => (s || '').slice(0, 5); // keep HH:MM for <input type=time>
 
+// ---- Age mode (pop-up card, exclusive count: end date excluded) ----
+let ageMode = false;
+const isTruthyParam = v => ['1','true','yes','on','y'].includes(String(v || '').trim().toLowerCase());
+
 function readStateFromUrl() {
   const q = new URLSearchParams(window.location.search);
   const pick = (...keys) => { for (const k of keys) { const v = q.get(k); if (v) return v.trim(); } return ''; };
-  let start = pick('start', 'startDate', 'start_date', 'from');
+  let start = pick('start', 'startDate', 'start_date', 'from', 'dob', 'birth', 'birthdate');
   let end = pick('end', 'endDate', 'end_date', 'to');
   let startTime = pick('startTime', 'start_time', 'starttime', 'fromTime');
   let endTime = pick('endTime', 'end_time', 'endtime', 'toTime');
-  return { start, end, startTime, endTime };
+  const ageRaw = pick('age_calc', 'ageCalc', 'age', 'agecalc', 'birthday');
+  return { start, end, startTime, endTime, ageRaw };
 }
 
 function applyStateFromUrl() {
@@ -315,7 +416,14 @@ function applyStateFromUrl() {
   else { $('endDate').value = todayLocalIso(); }
   if (isValidTimeStr(s.startTime)) { $('startTime').value = normTime(s.startTime); $('includeTime').checked = true; applied = true; }
   if (isValidTimeStr(s.endTime)) { $('endTime').value = normTime(s.endTime); $('includeTime').checked = true; applied = true; }
+  ageMode = isTruthyParam(s.ageRaw);
+  syncAgeBtn();
   return applied;
+}
+
+function syncAgeBtn() {
+  const b = $('ageBtn');
+  if (b) b.classList.toggle('active', ageMode);
 }
 
 function syncUrl() {
@@ -329,6 +437,7 @@ function syncUrl() {
       if ($('startTime').value) qs += `&startTime=${$('startTime').value}`;
       if ($('endTime').value) qs += `&endTime=${$('endTime').value}`;
     }
+    if (ageMode) qs += `&age_calc=true`;
     const newUrl = `${window.location.pathname}?${qs}`;
     window.history.replaceState(null, '', newUrl);
     const share = $('shareUrl');
@@ -338,12 +447,82 @@ function syncUrl() {
     const share = $('shareUrl');
     if (share) {
       const sd = $('startDate').value, ed = $('endDate').value;
-      share.value = `${window.location.pathname}?start=${sd}&end=${ed}&startTime=${$('startTime').value || '00:00'}&endTime=${$('endTime').value || '00:00'}`;
+      let qs = `?start=${sd}&end=${ed}&startTime=${$('startTime').value || '00:00'}&endTime=${$('endTime').value || '00:00'}`;
+      if (ageMode) qs += `&age_calc=true`;
+      share.value = `${window.location.pathname}${qs}`;
     }
   }
 }
 
-function calculate() {
+function fmtDateLong(d) {
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function nextBirthday(birth, ref) {
+  // Next birthday strictly after ref (if today is birthday, show today + 0 days + party)
+  let y = ref.getFullYear();
+  let cand = new Date(y, birth.getMonth(), birth.getDate(), birth.getHours(), birth.getMinutes(), 0);
+  // Handle Feb 29 → Feb 28 on non-leap years for display purposes
+  if (birth.getMonth() === 1 && birth.getDate() === 29 && cand.getMonth() !== 1) {
+    cand = new Date(y, 1, 28, birth.getHours(), birth.getMinutes(), 0);
+  }
+  if (cand <= ref) {
+    y += 1;
+    cand = new Date(y, birth.getMonth(), birth.getDate(), birth.getHours(), birth.getMinutes(), 0);
+    if (birth.getMonth() === 1 && birth.getDate() === 29 && cand.getMonth() !== 1) {
+      cand = new Date(y, 1, 28, birth.getHours(), birth.getMinutes(), 0);
+    }
+  }
+  const daysTo = Math.ceil((cand - ref) / 86400000);
+  return { date: cand, daysTo };
+}
+
+function renderAgeCard(start, end) {
+  // EXCLUSIVE age: End − Start (end date excluded) — the standard age definition.
+  const cal = calendarDiff(start, end);
+  const exclMs = end - start;
+  const totalDays = Math.floor(exclMs / 86400000);
+  const totalHours = Math.floor(exclMs / 3600000);
+  const totalMins = Math.floor(exclMs / 60000);
+  const totalMonths = cal.years * 12 + cal.months;
+  const w = Math.floor(totalDays / 7), d = totalDays % 7;
+
+  $('ageYears').textContent = cal.years;
+  $('ageBreakdown').textContent = fmtCalendar(cal);
+  $('ageDobLine').innerHTML = `🎂 Born <code>${fmtDateLong(start)}</code> → <code>${fmtDateLong(end)}</code>`;
+  $('ageDays').textContent = `${fmtNum(totalDays)} days`;
+  $('ageHours').textContent = `${fmtNum(totalHours)} hours`;
+  $('ageMins').textContent = `${fmtNum(totalMins)} minutes`;
+  $('ageMonths').textContent = `${fmtNum(totalMonths)} months`;
+  $('ageWeeks').textContent = `${fmtNum(w)} weeks + ${d} days`;
+
+  const nb = nextBirthday(start, end);
+  const turning = nb.date.getFullYear() - start.getFullYear();
+  if (nb.daysTo === 0) {
+    $('ageNext').textContent = `🎉 Happy birthday! You turn ${turning} today!`;
+  } else {
+    $('ageNext').textContent = `🎈 Next birthday: ${fmtDateLong(nb.date)} (turning ${turning}) — in ${fmtNum(nb.daysTo)} day${nb.daysTo !== 1 ? 's' : ''}`;
+  }
+}
+
+function openAgeModal() {
+  const p = parseInputs();
+  if (p.error) { calculate(); return; }
+  renderAgeCard(p.start, p.end);
+  $('ageOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAgeModal({ keepMode = true } = {}) {
+  $('ageOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  if (!keepMode && ageMode) {
+    // closing via ✕ keeps ageMode so the share link stays intact;
+    // explicit opt-out handled by toggling the button
+  }
+}
+
+function calculate(opts = {}) {
   const err = $('error'), sw = $('swapped');
   err.style.display = 'none'; sw.style.display = 'none';
   const p = parseInputs();
@@ -360,6 +539,16 @@ function calculate() {
 
   $('results').style.display = 'grid';
   syncUrl();
+  // Keep the age card live if it is open
+  if ($('ageOverlay') && $('ageOverlay').classList.contains('open')) {
+    renderAgeCard(start, end);
+  }
+  // Auto-open on ?age_calc=true (only on init / popstate, not on every keystroke)
+  if (opts.autoAge && ageMode) {
+    renderAgeCard(start, end);
+    $('ageOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
 }
 
 $('calcBtn').addEventListener('click', calculate);
@@ -412,6 +601,44 @@ $('copyBtn').addEventListener('click', async () => {
   setTimeout(() => { $('copyBtn').textContent = 'Copy link'; }, 1500);
 });
 
+// ---- Age pop-up wiring ----
+$('ageBtn').addEventListener('click', () => {
+  // Toggle age mode on so the share link keeps &age_calc=true
+  if ($('ageOverlay').classList.contains('open')) {
+    closeAgeModal();
+    return;
+  }
+  if (!ageMode) { ageMode = true; syncAgeBtn(); }
+  calculate();
+  openAgeModal();
+});
+$('ageClose').addEventListener('click', () => closeAgeModal());
+$('ageCloseBtn').addEventListener('click', () => closeAgeModal());
+$('ageOverlay').addEventListener('click', (e) => {
+  if (e.target === $('ageOverlay')) closeAgeModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeAgeModal();
+});
+$('ageCopyBtn').addEventListener('click', async (e) => {
+  ageMode = true; syncAgeBtn(); syncUrl();
+  const url = ($('shareUrl') && $('shareUrl').value) || window.location.href;
+  const btn = e.currentTarget;
+  try {
+    await navigator.clipboard.writeText(url);
+    btn.textContent = 'Copied ✓';
+  } catch (_) {
+    const tmp = document.createElement('textarea');
+    tmp.value = url;
+    document.body.appendChild(tmp);
+    tmp.select();
+    try { document.execCommand('copy'); btn.textContent = 'Copied ✓'; }
+    catch (_) { btn.textContent = 'Copy failed'; }
+    tmp.remove();
+  }
+  setTimeout(() => { btn.textContent = 'Copy age link 🔗'; }, 1500);
+});
+
 // Live-sync URL as the user edits (so the address bar is always shareable).
 // Only start is required — an empty end date falls back to today.
 ['startDate','endDate','startTime','endTime'].forEach(id => {
@@ -419,20 +646,23 @@ $('copyBtn').addEventListener('click', async () => {
     if ($('startDate').value) calculate();
   });
 });
-$('includeTime').addEventListener('change', calculate);
+$('includeTime').addEventListener('change', () => calculate());
 window.addEventListener('popstate', () => {
   applyStateFromUrl();
-  calculate();
+  // Re-open / close the pop-up to match ?age_calc on back/forward nav
+  if (ageMode) calculate({ autoAge: true });
+  else { calculate(); closeAgeModal(); }
 });
 
 // init: URL params win over defaults, so a shared link restores state directly.
 // No end param (or empty/invalid) → end defaults to today.
+// ?age_calc=true auto-opens the 🎂 age pop-up (exclusive: end excluded).
 (function init(){
   if (!$('startDate').value) $('startDate').value = `${new Date().getFullYear()}-01-01`;
   if (!$('endDate').value) $('endDate').value = todayLocalIso();
-  applyStateFromUrl(); // overrides defaults when ?start=&end=&startTime=&endTime= present; missing/empty end → today
+  applyStateFromUrl(); // overrides defaults when ?start=&end=&startTime=&endTime=&age_calc= present; missing/empty end → today
   if (!isValidDateStr($('endDate').value)) $('endDate').value = todayLocalIso();
-  calculate();
+  calculate({ autoAge: true });
 })();
 </script>
 </body>
