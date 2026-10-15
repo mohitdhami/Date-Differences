@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Date Difference Calculator — Inclusive & Exclusive</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card2: #334155;
+    --accent: #38bdf8;
+    --accent2: #a78bfa;
+    --green: #34d399;
+    --orange: #fbbf24;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 20% -10%, #1e3a8a 0%, transparent 60%),
+                radial-gradient(1000px 500px at 90% 0%, #6d28d9 0%, transparent 55%),
+                var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px 64px;
+  }
+  .wrap { width: 100%; max-width: 860px; }
+  h1 { font-size: 2rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+  h1 span { background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { color: var(--muted); margin: 0 0 24px; line-height: 1.5; }
+  .panel {
+    background: rgba(30,41,59,.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(148,163,184,.2);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px){ .grid2{ grid-template-columns: 1fr; } }
+  label { display:block; font-size:.85rem; color: var(--muted); margin-bottom:6px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+  input[type="date"], input[type="time"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(148,163,184,.3);
+    background: #0f172a;
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+  }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(56,189,248,.25); }
+  .row { display:flex; gap:12px; margin-top:18px; flex-wrap:wrap; align-items:center; }
+  .check { display:flex; align-items:center; gap:8px; color: var(--muted); font-size:.95rem; user-select:none; cursor:pointer; }
+  button.primary {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border: 0; color: #0f172a; font-weight: 800;
+    padding: 13px 24px; border-radius: 12px; font-size: 1rem; cursor: pointer;
+  }
+  button.primary:hover { filter: brightness(1.08); }
+  button.ghost {
+    background: transparent; border:1px solid rgba(148,163,184,.35); color: var(--text);
+    padding: 12px 18px; border-radius: 12px; cursor:pointer;
+  }
+  .quick { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+  .quick button {
+    background: rgba(56,189,248,.12); border:1px solid rgba(56,189,248,.3); color: var(--accent);
+    border-radius: 999px; padding: 6px 12px; cursor:pointer; font-size:.85rem;
+  }
+  .results { display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:20px; }
+  @media (max-width: 640px){ .results{ grid-template-columns: 1fr; } }
+  .card { border-radius: 16px; padding: 20px; border:1px solid rgba(148,163,184,.2); }
+  .card.excl { background: linear-gradient(180deg, rgba(52,211,153,.15), rgba(52,211,153,.03)); border-color: rgba(52,211,153,.35); }
+  .card.incl { background: linear-gradient(180deg, rgba(251,191,36,.15), rgba(251,191,36,.03)); border-color: rgba(251,191,36,.35); }
+  .card h2 { margin:0 0 4px; font-size:1.1rem; }
+  .card p.def { margin:0 0 14px; color: var(--muted); font-size:.85rem; }
+  .big { font-size: 1.5rem; font-weight: 800; line-height: 1.3; margin: 0 0 12px; }
+  .big small { font-weight:500; color: var(--muted); font-size:.9rem; display:block; }
+  .stat { display:flex; justify-content:space-between; padding:8px 0; border-top:1px dashed rgba(148,163,184,.25); font-size:.95rem; }
+  .stat b { font-variant-numeric: tabular-nums; }
+  .note { margin-top:16px; color: var(--muted); font-size:.9rem; line-height:1.6; background:rgba(15,23,42,.6); border:1px solid rgba(148,163,184,.18); padding:14px 16px; border-radius:12px; }
+  .error { background: rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.4); color:#fecaca; padding:12px 14px; border-radius:12px; margin-top:16px; display:none; }
+  .swapped { background: rgba(167,139,250,.15); border:1px solid rgba(167,139,250,.4); color:#ddd6fe; padding:10px 14px; border-radius:12px; margin-top:16px; display:none; font-size:.9rem; }
+  code { background: rgba(0,0,0,.4); padding:2px 6px; border-radius:6px; }
+  .share { display:flex; gap:8px; margin-top:14px; }
+  .share input {
+    flex:1; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid rgba(148,163,184,.3);
+    background: rgba(15,23,42,.7); color: var(--muted);
+    font-size: .8rem; outline: none;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Date Difference <span>Inclusive & Exclusive</span></h1>
+  <p class="sub">Find out exactly how much time passed between two dates — in years, months, days, hours, minutes and seconds. Compare the standard (exclusive) count vs the inclusive count that includes both endpoint days.</p>
+
+  <div class="panel">
+    <div class="grid2">
+      <div>
+        <label for="startDate">Start date</label>
+        <input type="date" id="startDate" />
+      </div>
+      <div>
+        <label for="endDate">End date</label>
+        <input type="date" id="endDate" />
+      </div>
+      <div>
+        <label for="startTime">Start time (optional)</label>
+        <input type="time" id="startTime" value="00:00" />
+      </div>
+      <div>
+        <label for="endTime">End time (optional)</label>
+        <input type="time" id="endTime" value="00:00" />
+      </div>
+    </div>
+
+    <div class="row">
+      <label class="check"><input type="checkbox" id="includeTime" checked /> Include time in calculation</label>
+    </div>
+
+    <div class="row">
+      <button class="primary" id="calcBtn">Calculate difference</button>
+      <button class="ghost" id="swapBtn">⇅ Swap dates</button>
+      <button class="ghost" id="todayBtn">Today → Now</button>
+    </div>
+
+    <div class="quick">
+      <button data-range="week">Last 7 days</button>
+      <button data-range="month">Last 30 days</button>
+      <button data-range="year">Last 365 days</button>
+      <button data-range="ytd">Jan 1 → Today</button>
+    </div>
+
+    <div class="share">
+      <input id="shareUrl" readonly onclick="this.select()" placeholder="Shareable link appears here…" />
+      <button class="ghost" id="copyBtn">Copy link</button>
+    </div>
+
+    <div class="error" id="error"></div>
+    <div class="swapped" id="swapped"></div>
+
+    <div class="results" id="results" style="display:none">
+      <div class="card excl">
+        <h2>🟢 Exclusive (elapsed)</h2>
+        <p class="def">Standard difference: <code>End − Start</code>. Jan 1 → Jan 2 = 1 day.</p>
+        <p class="big" id="exclBig"></p>
+        <div class="stat"><span>Total days</span><b id="exclDays"></b></div>
+        <div class="stat"><span>Total hours</span><b id="exclHours"></b></div>
+        <div class="stat"><span>Total minutes</span><b id="exclMins"></b></div>
+        <div class="stat"><span>Total seconds</span><b id="exclSecs"></b></div>
+        <div class="stat"><span>Weeks + days</span><b id="exclWeeks"></b></div>
+        <div class="stat"><span>Years + days + hours</span><b id="exclYDH"></b></div>
+      </div>
+      <div class="card incl">
+        <h2>🟡 Inclusive (count both ends)</h2>
+        <p class="def">Inclusive difference: <code>End − Start + 1 day</code>. Jan 1 → Jan 2 = 2 days.</p>
+        <p class="big" id="inclBig"></p>
+        <div class="stat"><span>Total days</span><b id="inclDays"></b></div>
+        <div class="stat"><span>Total hours</span><b id="inclHours"></b></div>
+        <div class="stat"><span>Total minutes</span><b id="inclMins"></b></div>
+        <div class="stat"><span>Total seconds</span><b id="inclSecs"></b></div>
+        <div class="stat"><span>Weeks + days</span><b id="inclWeeks"></b></div>
+        <div class="stat"><span>Years + days + hours</span><b id="inclYDH"></b></div>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>How it works:</b><br>
+      • <b>Exclusive</b> = exact elapsed time between the two moments.<br>
+      • <b>Inclusive</b> = exclusive + 24 hours (counts both the start day and end day, e.g. hotel nights vs. calendar days, age-in-days problems).<br>
+      • Calendar breakdown (years / months / days) accounts for leap years and varying month lengths.<br>
+      • If End is before Start, dates are auto-swapped.<br>
+      • <b>Shareable link:</b> state lives in the URL, e.g. <code>?start=2020-01-01&amp;end=2026-10-15&amp;startTime=09:30&amp;endTime=17:45</code> — opening that URL restores the dates/times instantly. Omit <code>end</code> (or leave it empty) and the end date defaults to today.
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const todayLocalIso = () => {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+function parseInputs() {
+  const sd = $('startDate').value;
+  // Missing / empty end date defaults to today (local).
+  let ed = $('endDate').value;
+  if (!ed) {
+    ed = todayLocalIso();
+    $('endDate').value = ed;
+  }
+  if (!sd) return { error: 'Please pick a start date (end date defaults to today).' };
+  const useTime = $('includeTime').checked;
+  const st = useTime ? ($('startTime').value || '00:00') : '00:00';
+  const et = useTime ? ($('endTime').value || '00:00') : '00:00';
+  let start = new Date(`${sd}T${st}:00`);
+  let end = new Date(`${ed}T${et}:00`);
+  if (isNaN(start) || isNaN(end)) return { error: 'Invalid date/time combination.' };
+  let swapped = false;
+  if (end < start) { [start, end] = [end, start]; swapped = true; }
+  return { start, end, swapped };
+}
+
+// Calendar-accurate diff: years, months, days, hours, mins, secs
+function calendarDiff(a, b) {
+  let years = b.getFullYear() - a.getFullYear();
+  let months = b.getMonth() - a.getMonth();
+  let days = b.getDate() - a.getDate();
+  let hours = b.getHours() - a.getHours();
+  let mins = b.getMinutes() - a.getMinutes();
+  let secs = b.getSeconds() - a.getSeconds();
+
+  if (secs < 0) { secs += 60; mins--; }
+  if (mins < 0) { mins += 60; hours--; }
+  if (hours < 0) { hours += 24; days--; }
+  if (days < 0) {
+    // borrow days from previous month of b
+    const prevMonth = new Date(b.getFullYear(), b.getMonth(), 0).getDate();
+    days += prevMonth;
+    months--;
+  }
+  if (months < 0) { months += 12; years--; }
+  return { years, months, days, hours, minutes: mins, seconds: secs };
+}
+
+function fmtNum(n) { return n.toLocaleString('en-US'); }
+
+function fmtCalendar(c) {
+  const parts = [];
+  if (c.years) parts.push(`${c.years} year${c.years!==1?'s':''}`);
+  if (c.months) parts.push(`${c.months} month${c.months!==1?'s':''}`);
+  if (c.days) parts.push(`${c.days} day${c.days!==1?'s':''}`);
+  if (c.hours) parts.push(`${c.hours} hour${c.hours!==1?'s':''}`);
+  if (c.minutes) parts.push(`${c.minutes} min${c.minutes!==1?'s':''}`);
+  if (c.seconds) parts.push(`${c.seconds} sec${c.seconds!==1?'s':''}`);
+  if (parts.length === 0) return '0 seconds (same moment)';
+  if (parts.length === 1) return parts[0];
+  const last = parts.pop();
+  return parts.join(', ') + ' and ' + last;
+}
+
+function fmtYDH(totalMs, calYears) {
+  // years (calendar) + remaining days + remaining hours
+  // remaining days = total full days - days accounted in full calendar years
+  return `${calYears.years} year${calYears.years!==1?'s':''}, ${fmtNum(calYears.dayRemainder)} day${calYears.dayRemainder!==1?'s':''} and ${calYears.hourRemainder} hour${calYears.hourRemainder!==1?'s':''}`;
+}
+
+function yearsDaysHoursSplit(start, end) {
+  // Full calendar years first, then leftover days/hours
+  let years = end.getFullYear() - start.getFullYear();
+  let anchor = new Date(start);
+  anchor.setFullYear(start.getFullYear() + years);
+  if (anchor > end) { years--; anchor = new Date(start); anchor.setFullYear(start.getFullYear() + years); }
+  const remMs = end - anchor;
+  const dayRemainder = Math.floor(remMs / 86400000);
+  const hourRemainder = Math.floor((remMs % 86400000) / 3600000);
+  return { years, dayRemainder, hourRemainder };
+}
+
+function renderTotals(prefix, diffMs, start, end) {
+  const totalSecs = Math.floor(diffMs / 1000);
+  const totalMins = Math.floor(diffMs / 60000);
+  const totalHours = Math.floor(diffMs / 3600000);
+  const totalDaysFloat = diffMs / 86400000;
+  const totalDaysInt = Math.floor(totalDaysFloat);
+
+  const cal = calendarDiff(start, end);
+  const ydh = yearsDaysHoursSplit(start, end);
+
+  $(prefix + 'Big').innerHTML = fmtCalendar(cal) + '<small>calendar breakdown</small>';
+  $(prefix + 'Days').textContent = `${fmtNum(totalDaysInt)} days (${totalDaysFloat.toFixed(2)} days)`;
+  $(prefix + 'Hours').textContent = `${fmtNum(totalHours)} hours`;
+  $(prefix + 'Mins').textContent = `${fmtNum(totalMins)} minutes`;
+  $(prefix + 'Secs').textContent = `${fmtNum(totalSecs)} seconds`;
+  const w = Math.floor(totalDaysInt / 7), d = totalDaysInt % 7;
+  $(prefix + 'Weeks').textContent = `${w} weeks + ${d} days`;
+  $(prefix + 'YDH').textContent = `${ydh.years} yrs, ${ydh.dayRemainder} days, ${ydh.hourRemainder} hrs`;
+}
+
+// ---- Shareable URL query params ----
+// Canonical format:
+//   ?start=YYYY-MM-DD&end=YYYY-MM-DD&startTime=HH:MM&endTime=HH:MM
+// Aliases accepted on read: startDate/start_date/from, endDate/end_date/to,
+// start_time, end_time. Times accept HH:MM or HH:MM:SS.
+const isValidDateStr = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '') && !isNaN(new Date(s + 'T00:00:00'));
+const isValidTimeStr = s => /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(s || '');
+const normTime = s => (s || '').slice(0, 5); // keep HH:MM for <input type=time>
+
+function readStateFromUrl() {
+  const q = new URLSearchParams(window.location.search);
+  const pick = (...keys) => { for (const k of keys) { const v = q.get(k); if (v) return v.trim(); } return ''; };
+  let start = pick('start', 'startDate', 'start_date', 'from');
+  let end = pick('end', 'endDate', 'end_date', 'to');
+  let startTime = pick('startTime', 'start_time', 'starttime', 'fromTime');
+  let endTime = pick('endTime', 'end_time', 'endtime', 'toTime');
+  return { start, end, startTime, endTime };
+}
+
+function applyStateFromUrl() {
+  const s = readStateFromUrl();
+  let applied = false;
+  if (isValidDateStr(s.start)) { $('startDate').value = s.start; applied = true; }
+  // Missing, empty (?end=), or invalid end param → today (local).
+  if (isValidDateStr(s.end)) { $('endDate').value = s.end; applied = true; }
+  else { $('endDate').value = todayLocalIso(); }
+  if (isValidTimeStr(s.startTime)) { $('startTime').value = normTime(s.startTime); $('includeTime').checked = true; applied = true; }
+  if (isValidTimeStr(s.endTime)) { $('endTime').value = normTime(s.endTime); $('includeTime').checked = true; applied = true; }
+  return applied;
+}
+
+function syncUrl() {
+  try {
+    const sd = $('startDate').value, ed = $('endDate').value;
+    if (!isValidDateStr(sd) || !isValidDateStr(ed)) return;
+    // Build manually (values are pre-validated to [0-9-:]) so the URL stays
+    // human-readable: ?start=2020-01-01&end=2026-10-15&startTime=09:30&endTime=17:45
+    let qs = `start=${sd}&end=${ed}`;
+    if ($('includeTime').checked) {
+      if ($('startTime').value) qs += `&startTime=${$('startTime').value}`;
+      if ($('endTime').value) qs += `&endTime=${$('endTime').value}`;
+    }
+    const newUrl = `${window.location.pathname}?${qs}`;
+    window.history.replaceState(null, '', newUrl);
+    const share = $('shareUrl');
+    if (share) share.value = window.location.href;
+  } catch (e) {
+    // file:// or sandboxed iframes may block replaceState — non-fatal
+    const share = $('shareUrl');
+    if (share) {
+      const sd = $('startDate').value, ed = $('endDate').value;
+      share.value = `${window.location.pathname}?start=${sd}&end=${ed}&startTime=${$('startTime').value || '00:00'}&endTime=${$('endTime').value || '00:00'}`;
+    }
+  }
+}
+
+function calculate() {
+  const err = $('error'), sw = $('swapped');
+  err.style.display = 'none'; sw.style.display = 'none';
+  const p = parseInputs();
+  if (p.error) { err.textContent = p.error; err.style.display = 'block'; $('results').style.display = 'none'; return; }
+  const { start, end, swapped } = p;
+  if (swapped) { sw.textContent = 'Note: end date was before start date — dates were swapped automatically.'; sw.style.display = 'block'; }
+
+  const exclMs = end - start;
+  const inclEnd = new Date(end.getTime() + 86400000); // +1 day
+  const inclMs = exclMs + 86400000;
+
+  renderTotals('excl', exclMs, start, end);
+  renderTotals('incl', inclMs, start, inclEnd);
+
+  $('results').style.display = 'grid';
+  syncUrl();
+}
+
+$('calcBtn').addEventListener('click', calculate);
+$('swapBtn').addEventListener('click', () => {
+  const sd = $('startDate').value, ed = $('endDate').value;
+  const st = $('startTime').value, et = $('endTime').value;
+  $('startDate').value = ed; $('endDate').value = sd;
+  $('startTime').value = et; $('endTime').value = st;
+  if (sd || ed) calculate();
+});
+$('todayBtn').addEventListener('click', () => {
+  const now = new Date();
+  const iso = d => d.toISOString().slice(0,10);
+  $('endDate').value = iso(now);
+  $('endTime').value = now.toTimeString().slice(0,5);
+  if (!$('startDate').value) $('startDate').value = iso(now);
+  calculate();
+});
+document.querySelectorAll('.quick button').forEach(b => b.addEventListener('click', () => {
+  const now = new Date();
+  const iso = d => d.toISOString().slice(0,10);
+  let s = new Date(now);
+  if (b.dataset.range === 'week') s.setDate(s.getDate() - 7);
+  if (b.dataset.range === 'month') s.setDate(s.getDate() - 30);
+  if (b.dataset.range === 'year') s.setDate(s.getDate() - 365);
+  if (b.dataset.range === 'ytd') s = new Date(now.getFullYear(), 0, 1);
+  $('startDate').value = iso(s);
+  $('endDate').value = iso(now);
+  $('startTime').value = '00:00';
+  $('endTime').value = now.toTimeString().slice(0,5);
+  calculate();
+}));
+
+$('copyBtn').addEventListener('click', async () => {
+  syncUrl();
+  const url = ($('shareUrl') && $('shareUrl').value) || window.location.href;
+  try {
+    await navigator.clipboard.writeText(url);
+    $('copyBtn').textContent = 'Copied ✓';
+  } catch (e) {
+    // fallback for file:// / non-secure contexts
+    const tmp = document.createElement('textarea');
+    tmp.value = url;
+    document.body.appendChild(tmp);
+    tmp.select();
+    try { document.execCommand('copy'); $('copyBtn').textContent = 'Copied ✓'; }
+    catch (_) { $('copyBtn').textContent = 'Copy failed'; }
+    tmp.remove();
+  }
+  setTimeout(() => { $('copyBtn').textContent = 'Copy link'; }, 1500);
+});
+
+// Live-sync URL as the user edits (so the address bar is always shareable).
+// Only start is required — an empty end date falls back to today.
+['startDate','endDate','startTime','endTime'].forEach(id => {
+  $(id).addEventListener('change', () => {
+    if ($('startDate').value) calculate();
+  });
+});
+$('includeTime').addEventListener('change', calculate);
+window.addEventListener('popstate', () => {
+  applyStateFromUrl();
+  calculate();
+});
+
+// init: URL params win over defaults, so a shared link restores state directly.
+// No end param (or empty/invalid) → end defaults to today.
+(function init(){
+  if (!$('startDate').value) $('startDate').value = `${new Date().getFullYear()}-01-01`;
+  if (!$('endDate').value) $('endDate').value = todayLocalIso();
+  applyStateFromUrl(); // overrides defaults when ?start=&end=&startTime=&endTime= present; missing/empty end → today
+  if (!isValidDateStr($('endDate').value)) $('endDate').value = todayLocalIso();
+  calculate();
+})();
+</script>
+</body>
+</html>
